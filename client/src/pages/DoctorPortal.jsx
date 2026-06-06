@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   User,
   Sparkles,
@@ -23,6 +23,9 @@ export default function DoctorPortal() {
   const [searchedRecords, setSearchedRecords] = useState([]);
   const [searchError, setSearchError] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -60,6 +63,30 @@ export default function DoctorPortal() {
   // Determine which data to display
   const activePassport = searchedPatient || passport;
   const activeRecords = searchedPatient ? searchedRecords : medicalRecords;
+
+  useEffect(() => {
+    const patientId = activePassport?.patientId;
+    if (patientId) {
+      setAiLoading(true);
+      fetch(`http://localhost:5000/api/ai-summary/${patientId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setAiSummary(data);
+          } else {
+            setAiSummary(null);
+          }
+          setAiLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setAiLoading(false);
+          setAiSummary(null);
+        });
+    } else {
+      setAiSummary(null);
+    }
+  }, [activePassport?.patientId]);
 
   const initials = getInitials(activePassport?.fullName);
   const allergies = splitList(activePassport?.allergies);
@@ -223,62 +250,43 @@ export default function DoctorPortal() {
               <div>
                 <h2 className="text-xl font-bold text-navy">AI Medical Summary</h2>
                 <p className="text-sm text-text-muted">
-                  Generated from {activeRecords.length} record
+                  Generated from {aiSummary?.recordsCount ?? activeRecords.length} record
                   {activeRecords.length === 1 ? '' : 's'} · Last updated {summaryUpdated}
                 </p>
               </div>
             </div>
 
             <div className="mt-6 space-y-4">
-              <div className="rounded-lg bg-white p-4 shadow-sm">
-                <h3 className="text-sm font-bold text-primary">Primary Conditions</h3>
-                <p className="mt-2 text-sm leading-relaxed text-text-muted">
-                  {conditions.length > 0
-                    ? `Patient has documented chronic conditions: ${conditions.join(', ')}.`
-                    : 'No chronic conditions documented in the patient passport.'}
-                  {activeRecords.length > 0
-                    ? ` Medical history includes ${activeRecords.length} recorded visit${activeRecords.length === 1 ? '' : 's'}, most recently ${lastVisit?.diagnosis} at ${lastVisit?.hospitalName}.`
-                    : ' No medical visits have been recorded yet.'}
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-white p-4 shadow-sm">
-                <h3 className="text-sm font-bold text-primary">Critical Alerts</h3>
-                {allergies.length > 0 ? (
-                  <div className="mt-2 flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                    <span className="text-sm font-semibold text-allergy-text">
-                      {allergies.join(', ')} Allergy — Avoid related medications and substances
-                    </span>
+              {aiLoading ? (
+                <div className="p-10 text-center text-text-muted">Generating AI Summary...</div>
+              ) : aiSummary ? (
+                <>
+                  {aiSummary.riskFlag && (
+                    <div className="rounded-lg bg-red-50 p-4 border-l-4 border-red-500 shadow-sm flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      <span className="font-bold text-red-700">CRITICAL ALERT: {aiSummary.riskFlag}</span>
+                    </div>
+                  )}
+                  <div className="rounded-lg bg-white p-4 shadow-sm">
+                    <h3 className="text-sm font-bold text-primary">Summary</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-text-muted">
+                      {aiSummary.summary}
+                    </p>
                   </div>
-                ) : (
-                  <p className="mt-2 text-sm text-text-muted">No critical allergy alerts on file.</p>
-                )}
-              </div>
-
-              <div className="rounded-lg bg-white p-4 shadow-sm">
-                <h3 className="text-sm font-bold text-primary">Recommended Actions</h3>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-text-muted">
-                  {allergies.length > 0 && (
-                    <li>Verify allergy band before any antibiotic or medication prescription</li>
-                  )}
-                  {medications.length > 0 && (
-                    <li>Review current medications: {medications.join(', ')}</li>
-                  )}
-                  {conditions.length > 0 && (
-                    <li>Monitor chronic conditions: {conditions.join(', ')}</li>
-                  )}
-                  {activeRecords.length === 0 && (
-                    <li>Schedule initial clinical assessment to establish baseline records</li>
-                  )}
-                  {allergies.length === 0 &&
-                    medications.length === 0 &&
-                    conditions.length === 0 &&
-                    activeRecords.length > 0 && (
-                      <li>Continue routine follow-up based on recorded visit history</li>
-                    )}
-                </ul>
-              </div>
+                  <div className="rounded-lg bg-white p-4 shadow-sm">
+                    <h3 className="text-sm font-bold text-primary">Key Health Insights</h3>
+                    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-text-muted">
+                      {aiSummary.healthInsights?.map((insight, idx) => (
+                        <li key={idx}>{insight}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-lg bg-white p-4 shadow-sm">
+                  <p className="text-sm text-text-muted">AI Summary unavailable. Ensure backend is running.</p>
+                </div>
+              )}
             </div>
           </div>
 

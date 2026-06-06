@@ -25,6 +25,13 @@ export default function AddRecord() {
   const navigate = useNavigate();
   const { addMedicalRecord } = useHealthPassport();
   const [form, setForm] = useState(initialForm);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
 
   const updateField = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -104,12 +111,22 @@ export default function AddRecord() {
             />
           </div>
 
-          <div className="mt-6 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-banner-bg/50 px-6 py-12">
-            <Upload className="h-10 w-10 text-primary/60" strokeWidth={1.5} />
-            <p className="mt-4 text-sm font-semibold text-navy">
-              Upload lab results or medical imaging
-            </p>
-            <p className="mt-1 text-xs text-text-muted">PDF, JPEG, or DICOM up to 50MB</p>
+          <div className="mt-6">
+            <label className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-banner-bg/50 px-6 py-12 cursor-pointer hover:bg-primary/5 transition">
+              <input 
+                type="file" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                onChange={handleFileChange}
+                accept="image/jpeg, image/png, application/pdf"
+              />
+              <Upload className="h-10 w-10 text-primary/60" strokeWidth={1.5} />
+              <p className="mt-4 text-sm font-semibold text-navy text-center">
+                {selectedFile ? `Selected: ${selectedFile.name}` : 'Upload lab results or medical imaging'}
+              </p>
+              <p className="mt-1 text-xs text-text-muted text-center">
+                {selectedFile ? 'Click to replace file' : 'PDF, JPEG, or DICOM up to 50MB'}
+              </p>
+            </label>
           </div>
 
           <div className="mt-8 flex items-center justify-end gap-4">

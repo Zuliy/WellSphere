@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   ShieldCheck,
@@ -16,6 +17,26 @@ import { splitList, getPassportExpiry, getInitials } from '../utils/helpers';
 
 export default function Passport() {
   const { passport, medicalRecords } = useHealthPassport();
+  const [qrData, setQrData] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
+
+  useEffect(() => {
+    if (passport?.patientId) {
+      setQrLoading(true);
+      fetch(`http://localhost:5000/api/qr/${passport.patientId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setQrData(data);
+          }
+          setQrLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setQrLoading(false);
+        });
+    }
+  }, [passport?.patientId]);
 
   const allergies = splitList(passport?.allergies);
   const medications = splitList(passport?.currentMedications);
@@ -81,7 +102,13 @@ export default function Passport() {
 
             <div className="mt-6 flex justify-center">
               <div className="rounded-xl bg-white p-4">
-                <QRCodeSVG value={qrValue} size={112} level="M" />
+                {qrLoading ? (
+                  <div className="flex h-[112px] w-[112px] items-center justify-center text-sm text-text-muted">Loading...</div>
+                ) : qrData?.qrCode ? (
+                  <img src={qrData.qrCode} alt="Patient QR Code" width={112} height={112} />
+                ) : (
+                  <QRCodeSVG value={qrValue} size={112} level="M" />
+                )}
               </div>
             </div>
 
@@ -110,13 +137,14 @@ export default function Passport() {
           </div>
 
           <div className="mt-4 flex gap-3">
-            <button
-              type="button"
+            <a
+              href={`http://localhost:5000/api/qr/${passport?.patientId}/download`}
+              download
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-primary-dark"
             >
               <Download className="h-4 w-4" />
               Download Passport
-            </button>
+            </a>
             <button
               type="button"
               className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-white py-3.5 text-sm font-semibold text-primary transition-colors hover:bg-bg-input"

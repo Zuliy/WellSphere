@@ -5,6 +5,8 @@ import { initDB } from './config/db.js';
 import authRoutes from './routes/auth.js';
 import passportRoutes from './routes/passport.js';
 import recordRoutes from './routes/records.js';
+import qrRoutes from './qrRoutes.js';
+import aiRoutes from './aiRoutes.js';
 
 dotenv.config();
 
@@ -24,6 +26,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/passport', passportRoutes);
 app.use('/api/records', recordRoutes);
+app.use('/api/qr', qrRoutes);
+app.use('/api/ai-summary', aiRoutes);
 
 // Base route for sanity check
 app.get('/', (req, res) => {
