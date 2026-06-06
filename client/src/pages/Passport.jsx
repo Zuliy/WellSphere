@@ -23,7 +23,7 @@ export default function Passport() {
   useEffect(() => {
     if (passport?.patientId) {
       setQrLoading(true);
-      fetch(`http://localhost:5000/api/qr/${passport.patientId}`)
+      fetch(`https://wellsphere-w7kt.onrender.com/api/qr/${passport.patientId}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -138,7 +138,7 @@ export default function Passport() {
 
           <div className="mt-4 flex gap-3">
             <a
-              href={`http://localhost:5000/api/qr/${passport?.patientId}/download`}
+              href={`https://wellsphere-w7kt.onrender.com/api/qr/${passport?.patientId}/download`}
               download
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-primary-dark"
             >

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const HealthPassportContext = createContext(null);
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://wellsphere-w7kt.onrender.com/api';
 
 export function HealthPassportProvider({ children }) {
   const [auth, setAuth] = useState(() => {

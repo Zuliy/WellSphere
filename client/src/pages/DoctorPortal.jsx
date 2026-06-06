@@ -37,7 +37,7 @@ export default function DoctorPortal() {
     setSearchedRecords([]);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/records/doctor/${searchId.trim()}`);
+      const res = await fetch(`https://wellsphere-w7kt.onrender.com/api/records/doctor/${searchId.trim()}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -68,7 +68,7 @@ export default function DoctorPortal() {
     const patientId = activePassport?.patientId;
     if (patientId) {
       setAiLoading(true);
-      fetch(`http://localhost:5000/api/ai-summary/${patientId}`)
+      fetch(`https://wellsphere-w7kt.onrender.com/api/ai-summary/${patientId}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
