@@ -13,16 +13,35 @@ import { useHealthPassport } from '../context/HealthPassportContext';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useHealthPassport();
+  const { login, register } = useHealthPassport();
+  const [isRegister, setIsRegister] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
-    login(email);
-    navigate('/home');
+    if (isRegister && !name.trim()) return;
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      if (isRegister) {
+        await register(name, email, password);
+      } else {
+        await login(email, password);
+      }
+      navigate('/home');
+    } catch (err) {
+      setError(err.message || 'Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,12 +86,37 @@ export default function Login() {
               <span className="text-lg font-bold text-primary">Health Passport AI</span>
             </div>
 
-            <h2 className="text-3xl font-bold text-navy">Welcome back</h2>
+            <h2 className="text-3xl font-bold text-navy">
+              {isRegister ? 'Create your passport' : 'Welcome back'}
+            </h2>
             <p className="mt-2 text-sm text-text-muted">
-              Access your secure clinical dashboard.
+              {isRegister ? 'Setup your secure health profile.' : 'Access your secure clinical dashboard.'}
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            {error && (
+              <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm font-medium text-red-600 border border-red-200">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+              {isRegister && (
+                <div>
+                  <label htmlFor="name" className="mb-2 block text-sm font-medium text-navy">
+                    Full Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="John Smith"
+                    required
+                    className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-navy placeholder:text-text-light focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              )}
+
               <div>
                 <label htmlFor="email" className="mb-2 block text-sm font-medium text-navy">
                   Email Address
@@ -82,7 +126,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="dr.smith@clinical.com"
+                  placeholder="john@email.com"
                   required
                   className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-navy placeholder:text-text-light focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
@@ -93,9 +137,11 @@ export default function Login() {
                   <label htmlFor="password" className="text-sm font-medium text-navy">
                     Password
                   </label>
-                  <a href="#" className="text-sm font-medium text-primary hover:underline">
-                    Forgot Password?
-                  </a>
+                  {!isRegister && (
+                    <a href="#" className="text-sm font-medium text-primary hover:underline">
+                      Forgot Password?
+                    </a>
+                  )}
                 </div>
                 <input
                   id="password"
@@ -107,21 +153,24 @@ export default function Login() {
                 />
               </div>
 
-              <label className="flex cursor-pointer items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                />
-                <span className="text-sm text-text-muted">Keep me securely logged in</span>
-              </label>
+              {!isRegister && (
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-text-muted">Keep me securely logged in</span>
+                </label>
+              )}
 
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-primary-dark"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-primary-dark disabled:bg-primary/50"
               >
-                Sign In to Passport
+                {loading ? 'Processing...' : isRegister ? 'Register & Setup Passport' : 'Sign In to Passport'}
                 <LogIn className="h-4 w-4" />
               </button>
             </form>
@@ -155,10 +204,17 @@ export default function Login() {
             </div>
 
             <p className="mt-8 text-center text-sm text-text-muted">
-              New to Health Passport?{' '}
-              <Link to="/login" className="font-bold text-primary hover:underline">
-                Create Account
-              </Link>
+              {isRegister ? 'Already have a Health Passport?' : 'New to Health Passport?'}{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRegister(!isRegister);
+                  setError(null);
+                }}
+                className="font-bold text-primary hover:underline"
+              >
+                {isRegister ? 'Sign In' : 'Create Account'}
+              </button>
             </p>
           </div>
         </div>
